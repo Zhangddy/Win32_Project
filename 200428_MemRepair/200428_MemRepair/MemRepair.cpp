@@ -100,3 +100,67 @@ BOOL WriteMemory(DWORD dwAddr, DWORD dwValue)
 	return WriteProcessMemory(g_hProcess, (LPVOID)dwAddr, &dwValue, sizeof(DWORD), NULL);
 }
 
+HANDLE FindProcess(DWORD ProcessID)
+{
+	PROCESSENTRY32 _pe32;
+	_pe32.dwSize = sizeof(_pe32);
+
+	HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE)
+	{
+		cout << "调用失败" << endl;
+		return NULL;
+	}
+	DWORD bMore = Process32First(hProcessSnap, &_pe32);
+
+	bool status = false;
+	while (bMore)
+	{
+		if (_pe32.th32ProcessID == ProcessID)
+		{
+			cout << "Find ID: " << ProcessID << " 进程名称: ";
+			printf("%ws", _pe32.szExeFile);
+			status = true;
+			break;
+		}
+
+		bMore = Process32Next(hProcessSnap, &_pe32);
+	}
+	CloseHandle(hProcessSnap);
+	if (status == true)
+	{
+		return OpenProcess(PROCESS_ALL_ACCESS, FALSE, ProcessID);
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+void ShowProcess()
+{
+	PROCESSENTRY32 pe32;
+	pe32.dwSize = sizeof(pe32);
+
+	HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+	if (hProcessSnap == INVALID_HANDLE_VALUE)
+	{
+		cout << "调用失败" << endl;
+		return;
+	}
+
+	BOOL bMore = Process32First(hProcessSnap, &pe32);
+
+	while (bMore)
+	{
+		cout << "进程名称: ";
+		printf("%-30ws", pe32.szExeFile);
+		cout << "   进程ID: " << pe32.th32ProcessID << endl;
+
+		bMore = Process32Next(hProcessSnap, &pe32);
+	}
+	CloseHandle(hProcessSnap);
+
+}
+
